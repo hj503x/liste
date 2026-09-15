@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LiSTe — make a list of anything</title>
+<meta name="description" content="A minimalist list maker. Make a list of anything, check things off, and export when you're done." />
+<meta name="theme-color" content="#2F5233" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="LiSTe" />
+<link rel="manifest" href='data:application/manifest+json,{"name":"LiSTe","short_name":"LiSTe","start_url":".","display":"standalone","background_color":"%23FAF7F0","theme_color":"%232F5233"}' />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAF7F0;
+    --bg-card: #FFFFFF;
+    --bg-sunken: #F1ECE1;
+    --ink: #211D16;
+    --ink-soft: #7A7261;
+    --ink-faint: #B5AE9D;
+    --border: #E3DCCB;
+    --border-strong: #D2C9B3;
+    --pine: #2F5233;
+    --pine-ink: #FFFFFF;
+    --danger: #AE3B2E;
+    --danger-soft: #F4E3DF;
+    --shadow: none;
+  }
+  [data-theme="dark"] {
+    --bg: #16140F;
+    --bg-card: #1F1C15;
+    --bg-sunken: #141210;
+    --ink: #F1ECE0;
+    --ink-soft: #9C9583;
+    --ink-faint: #5E584A;
+    --border: #33301F;
+    --border-strong: #453F2C;
+    --pine: #8FC28E;
+    --pine-ink: #12200F;
+    --danger: #E0897B;
+    --danger-soft: #332019;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    min-height: 100vh;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 5rem;
+  }
+  h1, h2 { font-family: 'Fraunces', serif; margin: 0; }
+  button, input, select { font-family: inherit; }
+  a { color: inherit; }
+
+  /* ---------- Header ---------- */
+  .header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .logo-block { position: relative; }
+  .logo {
+    font-size: 26px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .tagline {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 10px;
+    max-width: 32ch;
+  }
+  .stat-line {
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    margin: 4px 0 0;
+    max-width: 32ch;
+  }
+  .header-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .theme-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-card);
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .theme-btn:hover { background: var(--bg-sunken); }
+  .theme-btn svg { width: 17px; height: 17px; }
+
+  /* ---------- Search ---------- */
+  .search-field { margin-bottom: 14px; }
+
+  /* ---------- Templates ---------- */
+  .templates-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .template-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--bg-sunken);
+    border: 1px solid var(--border);
+    color: var(--ink-soft);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+  .template-btn svg { width: 11px; height: 11px; flex-shrink: 0; }
+  .template-btn:hover { border-color: var(--pine); color: var(--pine); }
+
+  /* ---------- New list ---------- */
+  .new-list-trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: transparent;
+    border: 1.5px dashed var(--border-strong);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    margin-bottom: 1.75rem;
+    text-align: left;
+    transition: border-color 0.12s ease, color 0.12s ease;
+  }
+  .new-list-trigger:hover {
+    border-color: var(--pine);
+    color: var(--pine);
+  }
+  .new-list-form-wrap { margin-bottom: 1.75rem; }
+  .new-list-form {
+    display: flex;
+    gap: 8px;
+  }
+  .color-picker-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    padding-left: 2px;
+  }
+  .field {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: 14.5px;
+    color: var(--ink);
+    outline: none;
+  }
+  .field::placeholder { color: var(--ink-faint); }
+  .field:focus { border-color: var(--pine); }
+  .btn-solid {
+    background: var(--pine);
+    color: var(--pine-ink);
+    border: none;
+    border-radius: 10px;
+    padding: 0 20px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-solid:hover { filter: brightness(1.08); }
+  .btn-icon-solid {
+    width: 38px;
+    background: var(--pine);
+    color: var(--pine-ink);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .btn-icon-solid:hover { filter: brightness(1.08); }
+
+  /* ---------- List grid (folder-tab cards) ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 20px 16px;
+  }
+  .card {
+    position: relative;
+    cursor: grab;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 3px 10px 10px 10px;
+    padding: 18px 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 108px;
+    transition: transform 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
+  }
+  .card:active { cursor: grabbing; }
+  .card:hover { transform: translateY(-2px); border-color: var(--border-strong); }
+  .card.dragging { opacity: 0.4; }
+  .card::before {
+    content: "";
+    position: absolute;
+    top: -9px;
+    left: 0;
+    width: 46px;
+    height: 9px;
+    border-radius: 4px 4px 0 0;
+    background: var(--tab-color, var(--pine));
+  }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .card-title {
+    font-family: 'Fraunces', serif;
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+  .card-top-actions { display: flex; gap: 4px; flex-shrink: 0; align-items: center; }
+  .card-grip { color: var(--ink-faint); display: flex; opacity: 0.6; }
+  .card-del {
+    background: transparent;
+    border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    padding: 2px;
+    flex-shrink: 0;
+    display: flex;
+  }
+  .card-del:hover { color: var(--danger); }
+  .card-meta {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin-top: auto;
+  }
+  .card-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--bg-sunken);
+    overflow: hidden;
+  }
+  .card-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--tab-color, var(--pine));
+  }
+
+  /* ---------- Empty state ---------- */
+  .empty {
+    text-align: center;
+    padding: 3.5rem 1rem;
+    color: var(--ink-faint);
+  }
+  .empty svg { width: 34px; height: 34px; margin-bottom: 12px; opacity: 0.55; }
+  .empty p { font-size: 14px; margin: 0; }
+  .empty-hint { margin-top: 6px !important; font-size: 12px !important; opacity: 0.75; }
+
+  /* ---------- Footnote ---------- */
+  .footnote {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    margin-top: 2.75rem;
+    line-height: 1.6;
+  }
+
+  /* ---------- List detail view ---------- */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .toolbar-actions { display: flex; gap: 8px; }
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .icon-btn:hover { background: var(--bg-sunken); }
+  .icon-btn.danger:hover { color: var(--danger); border-color: var(--danger); background: var(--danger-soft); }
+  .icon-btn svg { width: 17px; height: 17px; }
+  .new-list-trigger svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .btn-icon-solid svg { width: 16px; height: 16px; }
+  .card-del svg { width: 14px; height: 14px; }
+  .color-swatch-dot {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--tab-color, var(--pine));
+    display: block;
+  }
+
+  .detail-title-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .detail-title {
+    font-size: 28px;
+    font-weight: 500;
+    cursor: text;
+    outline: none;
+    border-bottom: 1.5px solid transparent;
+    padding-bottom: 2px;
+  }
+  .detail-title-input {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px solid var(--pine);
+    outline: none;
+    color: var(--ink);
+    width: 100%;
+    padding-bottom: 2px;
+  }
+  .edit-pencil-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    color: var(--ink-faint);
+    flex-shrink: 0;
+  }
+  .edit-pencil-btn:hover { color: var(--ink); }
+  .edit-pencil { width: 14px; height: 14px; }
+  .detail-sub-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 0 0 1.5rem;
+    flex-wrap: wrap;
+  }
+  .detail-sub { font-size: 12.5px; color: var(--ink-soft); margin: 0; }
+  .sort-select {
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    color: var(--ink-soft);
+    border-radius: 8px;
+    font-size: 11.5px;
+    padding: 5px 8px;
+    cursor: pointer;
+  }
+
+  .item-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 2px;
+    border-bottom: 1px solid var(--border);
+    animation: fade-in-up 0.2s ease;
+  }
+  .item-row:last-child { border-bottom: none; }
+  .item-row.dragging { opacity: 0.4; }
+  .drag-grip { color: var(--ink-faint); cursor: grab; display: flex; flex-shrink: 0; }
+  .item-row.no-drag .drag-grip { opacity: 0.2; cursor: default; }
+  .checkbox {
+    width: 21px;
+    height: 21px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border-strong);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    color: var(--pine-ink);
+  }
+  .checkbox.checked { background: var(--tab-color, var(--pine)); border-color: var(--tab-color, var(--pine)); }
+  .checkbox svg { width: 13px; height: 13px; }
+  .qty-stepper {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    flex-shrink: 0;
+    color: var(--ink-faint);
+  }
+  .qty-btn {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  .qty-btn:hover { background: var(--bg-sunken); color: var(--ink); }
+  .qty-val {
+    min-width: 22px;
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+  .qty-unit { font-size: 9.5px; margin-left: 1px; text-transform: lowercase; }
+  .item-text { flex: 1; font-size: 14.5px; word-break: break-word; }
+  .item-text.checked { color: var(--ink-faint); text-decoration: line-through; }
+  .item-del {
+    opacity: 0;
+    background: transparent;
+    border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    flex-shrink: 0;
+    transition: opacity 0.1s ease;
+  }
+  .item-row:hover .item-del { opacity: 1; }
+  .item-del:hover { color: var(--danger); }
+  .item-del svg { width: 14px; height: 14px; }
+
+  .export-wrap { position: relative; }
+  .dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 175px;
+    z-index: 20;
+    animation: fade-in-up 0.12s ease;
+  }
+  .dropdown-option {
+    text-align: left;
+    background: transparent;
+    border: none;
+    color: var(--ink);
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .dropdown-option:hover { background: var(--bg-sunken); }
+  .color-menu { flex-direction: row; min-width: auto; gap: 6px; padding: 8px; }
+  .color-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--dot-color);
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+  }
+  .color-dot.selected { border-color: var(--ink); }
+
+  .clear-btn {
+    margin-top: 1.25rem;
+    background: transparent;
+    border: none;
+    color: var(--ink-soft);
+    font-size: 12.5px;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .clear-btn:hover { color: var(--ink); }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    padding: 20px;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: auto; }
+  .modal-card {
+    background: var(--bg-card);
+    border-radius: 14px;
+    padding: 22px;
+    max-width: 320px;
+    width: 100%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  }
+  .modal-title { font-family: 'Fraunces', serif; font-size: 18px; margin: 0 0 8px; }
+  .modal-message { font-size: 13.5px; color: var(--ink-soft); margin: 0 0 18px; line-height: 1.5; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 9px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .btn-ghost:hover { background: var(--bg-sunken); }
+  .btn-danger {
+    background: var(--danger);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-danger:hover { filter: brightness(1.08); }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: var(--bg);
+    font-size: 13px;
+    padding: 9px 16px;
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    white-space: nowrap;
+    z-index: 30;
+  }
+  .toast.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(-4px); }
+  .toast-undo {
+    background: transparent;
+    border: none;
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 10px;
+  }
+
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .header { animation: fade-in-up 0.4s ease; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body data-theme="light">
+  <div class="wrap">
+    <div id="app"></div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <input type="file" id="import-file-input" accept="application/json" style="display:none" />
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-card">
+      <h2 class="modal-title" id="modal-title"></h2>
+      <p class="modal-message" id="modal-message"></p>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="modal-cancel">Cancel</button>
+        <button class="btn-danger" id="modal-confirm">Delete</button>
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "liste_app_data_v1";
+  var TAB_COLORS = [
+    { light: "#2F5233", dark: "#8FC28E" }, // pine
+    { light: "#A23E2A", dark: "#E0897B" }, // brick
+    { light: "#B8860B", dark: "#E0B24D" }, // ochre
+    { light: "#2C5B82", dark: "#7DB3D9" }, // denim
+    { light: "#6B4577", dark: "#C79FD1" }  // plum
+  ];
+  var TEMPLATES = {
+    "Groceries": ["2 milk", "12 eggs", "bread", "500g butter", "1kg rice", "2kg sugar"],
+    "Packing": ["passport", "phone charger", "toothbrush", "2 face masks", "medications"],
+    "To-do": []
+  };
+  var TEMPLATE_NAMES = ["Groceries", "Packing", "To-do"];
+  var UNIT_ALTS = "kg|mg|g|ml|l|lb|oz|pcs?|packs?|pkg|dozen|dz|boxes?|bottles?|cups?|cans?|bags?";
+  var GRIP_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="9" cy="6" r="1.4"/><circle cx="15" cy="6" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="18" r="1.4"/><circle cx="15" cy="18" r="1.4"/></svg>';
+
+  function tabColor(list) {
+    var pair = list.color || TAB_COLORS[0];
+    return pair[state.theme] || pair.light;
+  }
+  function sameColor(a, b) {
+    return !!a && !!b && a.light === b.light;
+  }
+
+  var state = load();
+  var activeId = null;
+  var creating = false;
+  var creatingColorIndex = 0;
+  var editingTitle = false;
+  var exportMenuOpen = false;
+  var colorMenuOpen = false;
+  var searchQuery = "";
+  var lastDeleted = null;
+  var toastTimer = null;
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        (parsed.lists || []).forEach(function (l) {
+          if (!l.sortMode) l.sortMode = "manual";
+          (l.items || []).forEach(function (it) {
+            if (typeof it.qty !== "number") it.qty = 1;
+            if (typeof it.unit !== "string") it.unit = "";
+          });
+        });
+        return parsed;
+      }
+    } catch (e) {}
+    var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    return { theme: prefersDark ? "dark" : "light", lists: [] };
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {}
+  }
+
+  function uid() {
+    return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+  }
+
+  function flash(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 1700);
+  }
+
+  function flashUndo(msg) {
+    var t = document.getElementById("toast");
+    t.innerHTML = escapeHtml(msg) + ' <button id="toast-undo-btn" class="toast-undo">Undo</button>';
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    var btn = document.getElementById("toast-undo-btn");
+    if (btn) btn.onclick = function (e) {
+      e.stopPropagation();
+      undoDelete();
+      t.classList.remove("show");
+    };
+    toastTimer = setTimeout(function () {
+      t.classList.remove("show");
+      lastDeleted = null;
+    }, 4500);
+  }
+
+  function icon(name) {
+    // Paths sourced from Feather Icons (MIT License) for clean, consistent line-icon geometry.
+    var icons = {
+      plus: '<line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>',
+      x: '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>',
+      check: '<polyline points="20 6 9 17 4 12"></polyline>',
+      download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>',
+      upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>',
+      sun: '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>',
+      moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>',
+      trash: '<polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line>',
+      pencil: '<path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>',
+      back: '<line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline>',
+      copy: '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>',
+      list: '<line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line>'
+    };
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (icons[name] || "") + '</svg>';
+  }
+
+  function escapeHtml(s) {
+    var d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // ---------- quantity parsing ----------
+  function parseItemInput(raw) {
+    var s = (raw || "").trim();
+    var m;
+
+    // "3x apples" / "3 x apples"
+    m = s.match(/^(\d+(?:\.\d+)?)\s*x\s+(.+)$/i);
+    if (m) return { qty: safeQty(m[1]), unit: "", text: m[2].trim() };
+
+    // "apples x 3" (requires a space before the x to avoid matching mid-word)
+    m = s.match(/^(.+?)\s+x\s*(\d+(?:\.\d+)?)$/i);
+    if (m) return { qty: safeQty(m[2]), unit: "", text: m[1].trim() };
+
+    // leading number [+ unit] + text — "2 coffee", "2kg sugar", "1.5l milk"
+    m = s.match(new RegExp("^(\\d+(?:\\.\\d+)?)\\s*(" + UNIT_ALTS + ")?\\s+(.+)$", "i"));
+    if (m) return { qty: safeQty(m[1]), unit: m[2] ? m[2].toLowerCase() : "", text: m[3].trim() };
+
+    // trailing text + number [+ unit] — "sugar 2kg", "milk 2"
+    m = s.match(new RegExp("^(.+?)\\s+(\\d+(?:\\.\\d+)?)\\s*(" + UNIT_ALTS + ")?$", "i"));
+    if (m) return { qty: safeQty(m[2]), unit: m[3] ? m[3].toLowerCase() : "", text: m[1].trim() };
+
+    return { qty: 1, unit: "", text: s };
+  }
+  function safeQty(v) {
+    var n = parseFloat(v);
+    if (!n || n <= 0) return 1;
+    return Math.round(n * 10) / 10;
+  }
+
+  function itemLine(it) {
+    var q = it.qty || 1;
+    if (it.unit) return q + it.unit + " " + it.text;
+    if (q > 1) return q + "x " + it.text;
+    return it.text;
+  }
+
+  function getDisplayItems(list) {
+    var items = list.items.slice();
+    if (list.sortMode === "alpha") {
+      items.sort(function (a, b) { return a.text.localeCompare(b.text); });
+    } else if (list.sortMode === "unchecked") {
+      items.sort(function (a, b) { return (a.checked ? 1 : 0) - (b.checked ? 1 : 0); });
+    }
+    return items;
+  }
+
+  // ---------- rendering ----------
+  function render() {
+    document.body.setAttribute("data-theme", state.theme);
+    var app = document.getElementById("app");
+    var active = state.lists.find(function (l) { return l.id === activeId; });
+    app.innerHTML = active ? renderDetail(active) : renderHome();
+    bindEvents(active);
+  }
+
+  function renderHome() {
+    var count = state.lists.length;
+    var countLabel = count === 0 ? "no lists yet" : (count + " list" + (count === 1 ? "" : "s"));
+
+    var totalItems = 0, totalDone = 0;
+    state.lists.forEach(function (l) {
+      totalItems += l.items.length;
+      totalDone += l.items.filter(function (i) { return i.checked; }).length;
+    });
+    var statLine = totalItems > 0 ? ("<p class=\"stat-line\">" + totalDone + " of " + totalItems + " items checked across all lists</p>") : "";
+
+    var searchHtml = count > 0
+      ? '<input class="field search-field" id="search-input" placeholder="Search your lists..." autocomplete="off" value="' + escapeHtml(searchQuery) + '" />'
+      : "";
+
+    var templatesHtml = '<div class="templates-row">' + TEMPLATE_NAMES.map(function (name) {
+      return '<button class="template-btn" data-template="' + name + '">' + icon("plus") + '<span>' + name + '</span></button>';
+    }).join("") + '</div>';
+
+    var newListHtml = creating
+      ? '<form id="new-list-form" class="new-list-form-wrap">' +
+          '<div class="new-list-form">' +
+            '<input class="field" id="new-list-input" placeholder="Name this list — groceries, packing, reading..." autocomplete="off" />' +
+            '<button type="submit" class="btn-solid">Create</button>' +
+          '</div>' +
+          '<div class="color-picker-row">' + TAB_COLORS.map(function (c, i) {
+            return '<button type="button" class="color-dot' + (creatingColorIndex === i ? " selected" : "") + '" data-create-color="' + i + '" style="--dot-color:' + c[state.theme] + '" aria-label="Choose color"></button>';
+          }).join("") + '</div>' +
+        '</form>'
+      : (templatesHtml + '<button class="new-list-trigger" id="new-list-trigger">' + icon("plus") + ' New list</button>');
+
+    var query = searchQuery.trim().toLowerCase();
+    var filteredLists = query ? state.lists.filter(function (l) { return l.title.toLowerCase().indexOf(query) !== -1; }) : state.lists;
+
+    var gridHtml;
+    if (count === 0) {
+      gridHtml = '<div class="empty">' + icon("list") + '<p>Make a list of anything — it will show up here.</p><p class="empty-hint">Try &quot;Groceries,&quot; &quot;Packing,&quot; or &quot;Reading.&quot;</p></div>';
+    } else if (filteredLists.length === 0) {
+      gridHtml = '<div class="empty"><p>No lists match &quot;' + escapeHtml(searchQuery) + '&quot;.</p></div>';
+    } else {
+      gridHtml = '<div class="grid">' + filteredLists.map(function (list) {
+        var done = list.items.filter(function (i) { return i.checked; }).length;
+        var total = list.items.length;
+        var pct = total ? Math.round((done / total) * 100) : 0;
+        var meta = total === 0 ? "empty" : (done + " / " + total + " done");
+        return (
+          '<div class="card" draggable="true" data-id="' + list.id + '" style="--tab-color:' + tabColor(list) + '">' +
+            '<div class="card-top">' +
+              '<div class="card-title">' + escapeHtml(list.title) + '</div>' +
+              '<div class="card-top-actions">' +
+                '<span class="card-grip">' + GRIP_SVG + '</span>' +
+                '<button class="card-del" data-del="' + list.id + '" aria-label="Delete list">' + icon("x") + '</button>' +
+              '</div>' +
+            '</div>' +
+            '<div class="card-meta">' + meta + '</div>' +
+            '<div class="card-bar"><div class="card-bar-fill" style="width:' + pct + '%"></div></div>' +
+          '</div>'
+        );
+      }).join("") + '</div>';
+    }
+
+    var footnote = count > 0
+      ? '<p class="footnote">LiSTe stores your lists locally in this browser. Use the export icon above to back everything up as JSON, or import a backup.</p>'
+      : "";
+
+    return (
+      '<div class="header">' +
+        '<div class="logo-block">' +
+          '<div class="logo">LiSTé</div>' +
+          '<p class="tagline">' + countLabel + ' — a list for anything.</p>' +
+          statLine +
+        '</div>' +
+        '<div class="header-actions">' +
+          '<button class="theme-btn" id="export-all-btn" aria-label="Export all lists" title="Export all lists as JSON">' + icon("download") + '</button>' +
+          '<button class="theme-btn" id="import-all-btn" aria-label="Import lists" title="Import lists from JSON">' + icon("upload") + '</button>' +
+          '<button class="theme-btn" id="theme-toggle" aria-label="Toggle theme">' + icon(state.theme === "light" ? "moon" : "sun") + '</button>' +
+        '</div>' +
+      '</div>' +
+      searchHtml +
+      newListHtml +
+      gridHtml +
+      footnote
+    );
+  }
+
+  function renderDetail(list) {
+    var done = list.items.filter(function (i) { return i.checked; }).length;
+    var total = list.items.length;
+    var sub = total === 0 ? "nothing on this list yet" : (done + " of " + total + " done");
+    var isManual = (list.sortMode || "manual") === "manual";
+    var displayItems = getDisplayItems(list);
+
+    var itemsHtml = total === 0
+      ? '<div class="empty" style="padding:2.25rem 1rem;"><p>Add the first item below.</p></div>'
+      : displayItems.map(function (item) {
+          return (
+            '<div class="item-row' + (isManual ? "" : " no-drag") + '" data-item="' + item.id + '"' + (isManual ? ' draggable="true"' : "") + '>' +
+              '<span class="drag-grip">' + GRIP_SVG + '</span>' +
+              '<button class="checkbox' + (item.checked ? " checked" : "") + '" data-toggle="' + item.id + '" style="--tab-color:' + tabColor(list) + '">' +
+                (item.checked ? icon("check") : "") +
+              '</button>' +
+              '<div class="qty-stepper">' +
+                '<button class="qty-btn" data-qty-dec="' + item.id + '" aria-label="Decrease quantity">−</button>' +
+                '<span class="qty-val">' + (item.qty || 1) + (item.unit ? ('<span class="qty-unit">' + escapeHtml(item.unit) + '</span>') : "") + '</span>' +
+                '<button class="qty-btn" data-qty-inc="' + item.id + '" aria-label="Increase quantity">+</button>' +
+              '</div>' +
+              '<span class="item-text' + (item.checked ? " checked" : "") + '">' + escapeHtml(item.text) + '</span>' +
+              '<button class="item-del" data-item-del="' + item.id + '" aria-label="Delete item">' + icon("x") + '</button>' +
+            '</div>'
+          );
+        }).join("");
+
+    var titleHtml = editingTitle
+      ? '<input class="detail-title-input" id="detail-title-input" value="' + escapeHtml(list.title) + '" autocomplete="off" />'
+      : ('<h1 class="detail-title" id="detail-title">' + escapeHtml(list.title) + '</h1>' +
+         '<button class="edit-pencil-btn" id="edit-title-btn" aria-label="Rename list">' + icon("pencil").replace('<svg ', '<svg class="edit-pencil" ') + '</button>');
+
+    var colorMenuHtml = colorMenuOpen
+      ? '<div class="dropdown-menu color-menu" id="color-menu">' + TAB_COLORS.map(function (c, i) {
+          return '<button class="color-dot' + (sameColor(list.color, c) ? " selected" : "") + '" data-color="' + i + '" style="--dot-color:' + c[state.theme] + '" aria-label="Color option"></button>';
+        }).join("") + '</div>'
+      : "";
+
+    var exportMenuHtml = exportMenuOpen
+      ? '<div class="dropdown-menu" id="export-menu">' +
+          '<button class="dropdown-option" id="export-txt">Download as .txt</button>' +
+          '<button class="dropdown-option" id="export-pdf">Download as PDF</button>' +
+          '<button class="dropdown-option" id="export-json">Download as JSON</button>' +
+          '<button class="dropdown-option" id="export-copy">Copy to clipboard</button>' +
+        '</div>'
+      : "";
+
+    var sortHtml = total > 1
+      ? '<select class="sort-select" id="sort-select">' +
+          '<option value="manual"' + (isManual ? " selected" : "") + '>Manual order</option>' +
+          '<option value="alpha"' + (list.sortMode === "alpha" ? " selected" : "") + '>Alphabetical</option>' +
+          '<option value="unchecked"' + (list.sortMode === "unchecked" ? " selected" : "") + '>Unchecked first</option>' +
+        '</select>'
+      : "";
+
+    return (
+      '<div class="toolbar">' +
+        '<button class="icon-btn" id="back-btn" aria-label="Back to lists">' + icon("back") + '</button>' +
+        '<div class="toolbar-actions">' +
+          '<div class="export-wrap">' +
+            '<button class="icon-btn" id="color-btn" aria-label="Change list color"><span class="color-swatch-dot" style="--tab-color:' + tabColor(list) + '"></span></button>' +
+            colorMenuHtml +
+          '</div>' +
+          '<div class="export-wrap">' +
+            '<button class="icon-btn" id="export-btn" aria-label="Export list">' + icon("download") + '</button>' +
+            exportMenuHtml +
+          '</div>' +
+          '<button class="icon-btn danger" id="delete-list-btn" aria-label="Delete list">' + icon("trash") + '</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="detail-title-row">' + titleHtml + '</div>' +
+      '<div class="detail-sub-row">' +
+        '<p class="detail-sub">' + sub + '</p>' +
+        sortHtml +
+      '</div>' +
+      '<form id="add-item-form" class="new-list-form">' +
+        '<input class="field" id="add-item-input" placeholder="Add an item — try &quot;2 coffee&quot; or &quot;sugar 2kg&quot;..." autocomplete="off" />' +
+        '<button type="submit" class="btn-icon-solid" aria-label="Add item">' + icon("plus") + '</button>' +
+      '</form>' +
+      '<div id="items-list">' + itemsHtml + '</div>' +
+      (done > 0 ? '<button class="clear-btn" id="clear-checked-btn">Clear ' + done + ' checked item' + (done === 1 ? "" : "s") + '</button>' : "")
+    );
+  }
+
+  // ---------- confirm modal ----------
+  function showConfirm(title, message, onConfirm) {
+    var overlay = document.getElementById("modal-overlay");
+    document.getElementById("modal-title").textContent = title;
+    document.getElementById("modal-message").textContent = message;
+    overlay.classList.add("show");
+    var confirmBtn = document.getElementById("modal-confirm");
+    var cancelBtn = document.getElementById("modal-cancel");
+    function cleanup() {
+      overlay.classList.remove("show");
+      confirmBtn.onclick = null;
+      cancelBtn.onclick = null;
+      overlay.onclick = null;
+    }
+    confirmBtn.onclick = function () { cleanup(); onConfirm(); };
+    cancelBtn.onclick = cleanup;
+    overlay.onclick = function (e) { if (e.target === overlay) cleanup(); };
+  }
+
+  // ---------- actions ----------
+  function addList(name, colorIndex) {
+    var trimmed = name.trim();
+    if (!trimmed) return;
+    var list = {
+      id: uid(),
+      title: trimmed,
+      items: [],
+      color: TAB_COLORS[typeof colorIndex === "number" ? colorIndex : (state.lists.length % TAB_COLORS.length)],
+      sortMode: "manual",
+      createdAt: Date.now()
+    };
+    state.lists.unshift(list);
+    creating = false;
+    creatingColorIndex = 0;
+    activeId = list.id;
+    save();
+    render();
+  }
+
+  function addTemplateList(name) {
+    var items = (TEMPLATES[name] || []).map(function (raw) {
+      var p = parseItemInput(raw);
+      return { id: uid(), text: p.text, qty: p.qty, unit: p.unit, checked: false };
+    });
+    var list = {
+      id: uid(),
+      title: name,
+      items: items,
+      color: TAB_COLORS[state.lists.length % TAB_COLORS.length],
+      sortMode: "manual",
+      createdAt: Date.now()
+    };
+    state.lists.unshift(list);
+    activeId = list.id;
+    save();
+    render();
+  }
+
+  function deleteListWithUndo(id) {
+    var idx = state.lists.findIndex(function (l) { return l.id === id; });
+    if (idx === -1) return;
+    var removed = state.lists.splice(idx, 1)[0];
+    lastDeleted = { type: "list", data: removed, index: idx };
+    if (activeId === id) activeId = null;
+    save();
+    render();
+    flashUndo("List deleted");
+  }
+
+  function renameList(id, title) {
+    var t = title.trim();
+    if (!t) return;
+    var list = state.lists.find(function (l) { return l.id === id; });
+    if (list) list.title = t;
+    save();
+  }
+
+  function reorderLists(draggedId, targetId) {
+    var from = state.lists.findIndex(function (l) { return l.id === draggedId; });
+    var to = state.lists.findIndex(function (l) { return l.id === targetId; });
+    if (from === -1 || to === -1) return;
+    var moved = state.lists.splice(from, 1)[0];
+    state.lists.splice(to, 0, moved);
+    save();
+    render();
+  }
+
+  function addItem(listId, rawText) {
+    var raw = (rawText || "").trim();
+    if (!raw) return;
+    var list = state.lists.find(function (l) { return l.id === listId; });
+    if (!list) return;
+    var parsed = parseItemInput(raw);
+    if (!parsed.text) return;
+    var existing = list.items.find(function (i) { return i.text.toLowerCase() === parsed.text.toLowerCase(); });
+    if (existing) {
+      existing.qty = Math.round(((existing.qty || 1) + parsed.qty) * 10) / 10;
+      if (parsed.unit) existing.unit = parsed.unit;
+      flash('Updated quantity for "' + existing.text + '"');
+    } else {
+      list.items.push({ id: uid(), text: parsed.text, qty: parsed.qty, unit: parsed.unit, checked: false });
+    }
+    save();
+    render();
+    var input = document.getElementById("add-item-input");
+    if (input) input.focus();
+  }
+
+  function toggleItem(listId, itemId) {
+    var list = state.lists.find(function (l) { return l.id === listId; });
+    if (!list) return;
+    var item = list.items.find(function (i) { return i.id === itemId; });
+    if (item) item.checked = !item.checked;
+    save();
+    render();
+  }
+
+  function changeQty(listId, itemId, delta) {
+    var list = state.lists.find(function (l) { return l.id === listId; });
+    if (!list) return;
+    var item = list.items.find(function (i) { return i.id === itemId; });
+    if (!item) return;
+    var next = (item.qty || 1) + delta;
+    next = Math.max(0.1, Math.min(999, next));
+    item.qty = Math.round(next * 10) / 10;
+    save();
+    render();
+  }
+
+  function deleteItemWithUndo(listId, itemId) {
+    var list = state.lists.find(function (l) { return l.id === listId; });
+    if (!list) return;
+    var idx = list.items.findIndex(function (i) { return i.id === itemId; });
+    if (idx === -1) return;
+    var removed = list.items.splice(idx, 1)[0];
+    lastDeleted = { type: "item", listId: listId, data: removed, index: idx };
+    save();
+    render();
+    flashUndo("Item deleted");
+  }
+
+  function undoDelete() {
+    if (!lastDeleted) return;
+    if (lastDeleted.type === "list") {
+      state.lists.splice(Math.min(lastDeleted.index, state.lists.length), 0, lastDeleted.data);
+    } else if (lastDeleted.type === "item") {
+      var list = state.lists.find(function (l) { return l.id === lastDeleted.listId; });
+      if (list) list.items.splice(Math.min(lastDeleted.index, list.items.length), 0, lastDeleted.data);
+    }
+    lastDeleted = null;
+    save();
+    render();
+    flash("Restored");
+  }
+
+  function reorderItems(listId, draggedId, targetId) {
+    var list = state.lists.find(function (l) { return l.id === listId; });
+    if (!list) return;
+    var items = list.items;
+    var from = items.findIndex(function (i) { return i.id === draggedId; });
+    var to = items.findIndex(function (i) { return i.id === targetId; });
+    if (from === -1 || to === -1) return;
+    var moved = items.splice(from, 1)[0];
+    items.splice(to, 0, moved);
+    save();
+    render();
+  }
+
+  function clearChecked(listId) {
+    var list = state.lists.find(function (l) { return l.id === listId; });
+    if (!list) return;
+    list.items = list.items.filter(function (i) { return !i.checked; });
+    save();
+    render();
+  }
+
+  function exportList(list) {
+    var lines = [list.title, "-".repeat(list.title.length), ""];
+    list.items.forEach(function (it) {
+      lines.push((it.checked ? "[x] " : "[ ] ") + itemLine(it));
+    });
+    var text = lines.join("\n");
+    var blob = new Blob([text], { type: "text/plain" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = (list.title.replace(/[^\w\-]+/g, "_").slice(0, 60) || "list") + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    flash("List exported");
+  }
+
+  function exportPDF(list) {
+    try {
+      var jsPDFLib = window.jspdf && window.jspdf.jsPDF;
+      if (!jsPDFLib) { flash("PDF export unavailable"); return; }
+      var doc = new jsPDFLib();
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text(list.title, 14, 18);
+      doc.setDrawColor(215, 210, 195);
+      doc.line(14, 23, 196, 23);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(12);
+      var y = 34;
+      list.items.forEach(function (it) {
+        var mark = it.checked ? "[x]  " : "[ ]  ";
+        var lines = doc.splitTextToSize(mark + itemLine(it), 178);
+        if (y + lines.length * 7 > 285) { doc.addPage(); y = 20; }
+        doc.text(lines, 14, y);
+        y += lines.length * 7 + 2;
+      });
+      var filename = (list.title.replace(/[^\w\-]+/g, "_").slice(0, 60) || "list") + ".pdf";
+      doc.save(filename);
+      flash("PDF exported");
+    } catch (e) {
+      flash("Couldn't export PDF");
+    }
+  }
+
+  function exportSingleJSON(list) {
+    var blob = new Blob([JSON.stringify(list, null, 2)], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = (list.title.replace(/[^\w\-]+/g, "_").slice(0, 60) || "list") + ".json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    flash("List exported as JSON");
+  }
+
+  function copyList(list) {
+    var lines = list.items.map(function (it) {
+      return (it.checked ? "☑ " : "☐ ") + itemLine(it);
+    });
+    var text = [list.title].concat(lines).join("\n");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        flash("Copied to clipboard");
+      }).catch(function () { flash("Couldn't copy"); });
+    } else {
+      flash("Couldn't copy");
+    }
+  }
+
+  function exportAllData() {
+    var payload = { exportedAt: new Date().toISOString(), lists: state.lists };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "liste-backup-" + Date.now() + ".json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    flash("All lists exported");
+  }
+
+  function importAllData(file) {
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        var data = JSON.parse(e.target.result);
+        var importedLists = Array.isArray(data) ? data : data.lists;
+        if (!Array.isArray(importedLists)) throw new Error("bad format");
+        importedLists.forEach(function (l) {
+          state.lists.push({
+            id: uid(),
+            title: l.title || "Imported list",
+            items: (l.items || []).map(function (it) {
+              return { id: uid(), text: it.text || "", qty: typeof it.qty === "number" ? it.qty : 1, unit: it.unit || "", checked: !!it.checked };
+            }),
+            color: TAB_COLORS[state.lists.length % TAB_COLORS.length],
+            sortMode: "manual",
+            createdAt: Date.now()
+          });
+        });
+        save();
+        render();
+        flash("Imported " + importedLists.length + " list" + (importedLists.length === 1 ? "" : "s"));
+      } catch (err) {
+        flash("Couldn't read that file");
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // ---------- drag & drop reorder ----------
+  function attachDragReorder(selector, reorderFn) {
+    var draggedId = null;
+    document.querySelectorAll(selector).forEach(function (el) {
+      el.addEventListener("dragstart", function () {
+        draggedId = el.getAttribute("data-id") || el.getAttribute("data-item");
+        el.classList.add("dragging");
+      });
+      el.addEventListener("dragend", function () {
+        el.classList.remove("dragging");
+        draggedId = null;
+      });
+      el.addEventListener("dragover", function (e) { e.preventDefault(); });
+      el.addEventListener("drop", function (e) {
+        e.preventDefault();
+        var targetId = el.getAttribute("data-id") || el.getAttribute("data-item");
+        if (draggedId && draggedId !== targetId) reorderFn(draggedId, targetId);
+      });
+    });
+  }
+
+  // ---------- events ----------
+  function bindEvents(active) {
+    var importInput = document.getElementById("import-file-input");
+    if (importInput) {
+      importInput.onchange = function () {
+        importAllData(importInput.files[0]);
+        importInput.value = "";
+      };
+    }
+
+    if (!active) {
+      var themeBtn = document.getElementById("theme-toggle");
+      if (themeBtn) themeBtn.onclick = function () {
+        state.theme = state.theme === "light" ? "dark" : "light";
+        save();
+        render();
+      };
+
+      var exportAllBtn = document.getElementById("export-all-btn");
+      if (exportAllBtn) exportAllBtn.onclick = exportAllData;
+
+      var importAllBtn = document.getElementById("import-all-btn");
+      if (importAllBtn) importAllBtn.onclick = function () {
+        var input = document.getElementById("import-file-input");
+        if (input) input.click();
+      };
+
+      var searchInput = document.getElementById("search-input");
+      if (searchInput) {
+        searchInput.oninput = function (e) {
+          searchQuery = e.target.value;
+          var cursorPos = e.target.selectionStart;
+          render();
+          var newInput = document.getElementById("search-input");
+          if (newInput) {
+            newInput.focus();
+            newInput.setSelectionRange(cursorPos, cursorPos);
+          }
+        };
+      }
+
+      document.querySelectorAll("[data-template]").forEach(function (btn) {
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          addTemplateList(btn.getAttribute("data-template"));
+        });
+      });
+
+      var trigger = document.getElementById("new-list-trigger");
+      if (trigger) trigger.onclick = function () {
+        creating = true;
+        render();
+        var input = document.getElementById("new-list-input");
+        if (input) input.focus();
+      };
+
+      var form = document.getElementById("new-list-form");
+      if (form) {
+        form.onsubmit = function (e) {
+          e.preventDefault();
+          var input = document.getElementById("new-list-input");
+          addList(input ? input.value : "", creatingColorIndex);
+        };
+        var input = document.getElementById("new-list-input");
+        if (input) {
+          input.onkeydown = function (e) {
+            if (e.key === "Escape") { creating = false; creatingColorIndex = 0; render(); }
+          };
+        }
+        document.querySelectorAll("[data-create-color]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            creatingColorIndex = parseInt(btn.getAttribute("data-create-color"), 10);
+            render();
+            var i2 = document.getElementById("new-list-input");
+            if (i2) i2.focus();
+          });
+        });
+      }
+
+      document.querySelectorAll(".card").forEach(function (card) {
+        card.addEventListener("click", function () {
+          activeId = card.getAttribute("data-id");
+          exportMenuOpen = false;
+          colorMenuOpen = false;
+          editingTitle = false;
+          render();
+        });
+      });
+      document.querySelectorAll("[data-del]").forEach(function (btn) {
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var id = btn.getAttribute("data-del");
+          var list = state.lists.find(function (l) { return l.id === id; });
+          showConfirm(
+            "Delete list?",
+            'This will permanently delete "' + (list ? list.title : "this list") + '" and all its items.',
+            function () { deleteListWithUndo(id); }
+          );
+        });
+      });
+
+      attachDragReorder('.card[draggable="true"]', reorderLists);
+      return;
+    }
+
+    // detail view
+    document.getElementById("back-btn").onclick = function () {
+      activeId = null;
+      exportMenuOpen = false;
+      colorMenuOpen = false;
+      editingTitle = false;
+      render();
+    };
+
+    var colorBtn = document.getElementById("color-btn");
+    if (colorBtn) {
+      colorBtn.onclick = function (e) {
+        e.stopPropagation();
+        colorMenuOpen = !colorMenuOpen;
+        exportMenuOpen = false;
+        render();
+        if (colorMenuOpen) {
+          setTimeout(function () { document.addEventListener("click", closeColorMenuOnce); }, 0);
+        }
+      };
+    }
+    function closeColorMenuOnce() {
+      colorMenuOpen = false;
+      document.removeEventListener("click", closeColorMenuOnce);
+      render();
+    }
+    document.querySelectorAll("[data-color]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var idx = parseInt(btn.getAttribute("data-color"), 10);
+        active.color = TAB_COLORS[idx];
+        colorMenuOpen = false;
+        save();
+        render();
+      });
+    });
+
+    var exportBtn = document.getElementById("export-btn");
+    if (exportBtn) {
+      exportBtn.onclick = function (e) {
+        e.stopPropagation();
+        exportMenuOpen = !exportMenuOpen;
+        colorMenuOpen = false;
+        render();
+        if (exportMenuOpen) {
+          setTimeout(function () { document.addEventListener("click", closeExportMenuOnce); }, 0);
+        }
+      };
+    }
+    function closeExportMenuOnce() {
+      exportMenuOpen = false;
+      document.removeEventListener("click", closeExportMenuOnce);
+      render();
+    }
+    var exportTxtBtn = document.getElementById("export-txt");
+    if (exportTxtBtn) exportTxtBtn.onclick = function (e) { e.stopPropagation(); exportMenuOpen = false; exportList(active); };
+    var exportPdfBtn = document.getElementById("export-pdf");
+    if (exportPdfBtn) exportPdfBtn.onclick = function (e) { e.stopPropagation(); exportMenuOpen = false; exportPDF(active); };
+    var exportJsonBtn = document.getElementById("export-json");
+    if (exportJsonBtn) exportJsonBtn.onclick = function (e) { e.stopPropagation(); exportMenuOpen = false; exportSingleJSON(active); };
+    var exportCopyBtn = document.getElementById("export-copy");
+    if (exportCopyBtn) exportCopyBtn.onclick = function (e) { e.stopPropagation(); exportMenuOpen = false; copyList(active); };
+
+    document.getElementById("delete-list-btn").onclick = function () {
+      showConfirm(
+        "Delete list?",
+        'This will permanently delete "' + active.title + '" and all its items.',
+        function () { deleteListWithUndo(active.id); }
+      );
+    };
+
+    if (editingTitle) {
+      var titleInput = document.getElementById("detail-title-input");
+      if (titleInput) {
+        titleInput.focus();
+        titleInput.setSelectionRange(titleInput.value.length, titleInput.value.length);
+        titleInput.addEventListener("blur", function () {
+          renameList(active.id, titleInput.value);
+          editingTitle = false;
+          render();
+        });
+        titleInput.addEventListener("keydown", function (e) {
+          if (e.key === "Enter") { e.preventDefault(); titleInput.blur(); }
+          if (e.key === "Escape") { editingTitle = false; render(); }
+        });
+      }
+    } else {
+      var editBtn = document.getElementById("edit-title-btn");
+      if (editBtn) editBtn.onclick = function () { editingTitle = true; render(); };
+    }
+
+    var sortSelect = document.getElementById("sort-select");
+    if (sortSelect) {
+      sortSelect.onchange = function () {
+        active.sortMode = sortSelect.value;
+        save();
+        render();
+      };
+    }
+
+    var addForm = document.getElementById("add-item-form");
+    addForm.onsubmit = function (e) {
+      e.preventDefault();
+      var input = document.getElementById("add-item-input");
+      addItem(active.id, input ? input.value : "");
+    };
+
+    document.querySelectorAll("[data-toggle]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        toggleItem(active.id, btn.getAttribute("data-toggle"));
+      });
+    });
+    document.querySelectorAll("[data-qty-inc]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        changeQty(active.id, btn.getAttribute("data-qty-inc"), 1);
+      });
+    });
+    document.querySelectorAll("[data-qty-dec]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        changeQty(active.id, btn.getAttribute("data-qty-dec"), -1);
+      });
+    });
+    document.querySelectorAll("[data-item-del]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        deleteItemWithUndo(active.id, btn.getAttribute("data-item-del"));
+      });
+    });
+
+    if ((active.sortMode || "manual") === "manual") {
+      attachDragReorder('.item-row[draggable="true"]', function (draggedId, targetId) {
+        reorderItems(active.id, draggedId, targetId);
+      });
+    }
+
+    var clearBtn = document.getElementById("clear-checked-btn");
+    if (clearBtn) clearBtn.onclick = function () { clearChecked(active.id); };
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
